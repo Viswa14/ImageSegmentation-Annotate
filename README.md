@@ -9,7 +9,7 @@ But, there is no single tool to completely help manually label our own image dat
 ![Alt text](https://github.com/Viswa14/ImageSegmentation-Annotate/blob/master/LabelledImage.PNG?raw=true "Object-ManuallyLabeled Image") <br>
 
 To-Do List <br>
-1. Add a GUI to select path for Images/Select particular Image File <br>
+1. Add a GUI to select path for Images/Select particular Image File    <strong> Done </strong> <br>
 2. Provide functionality to select path automatically to save images. <br>
 3. Try to add bounding box functionality to extend tool for detection purposes.
 
