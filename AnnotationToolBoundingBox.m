@@ -63,7 +63,7 @@ global BoundingBox_index;
 global JSONdata;
 BoundingBox = [];
 BoundingBox_index = 0;
-addpath('D:\SMILE_LAB\jsonlab')
+addpath('jsonlab')
 set(handles.axes1,'xtick',[],'ytick',[]);
 set(handles.axes1, 'units', 'normalized', 'position', [0.05 0.15 0.9 0.8]);
 handles.NextFlag = 0;
@@ -201,6 +201,10 @@ function Next_Callback(hObject, eventdata, handles)
     global index; 
     global BoundingBox_index;
     global BoundingBox;
+    global JSONdata;
+    data = struct('BoundingBox',BoundingBox);
+    json_data = savejson(handles.images{index},data);
+    fprintf(JSONdata,json_data)
     handles.NextFlag = 1;
     index = index + 1;
     %index = displayImage(handles,index);
