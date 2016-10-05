@@ -23,7 +23,7 @@ function varargout = AnnotationToolBoundingBox(varargin)
 
 % Edit the above text to modify the response to help AnnotationToolBoundingBox
 
-% Last Modified by GUIDE v2.5 03-Oct-2016 17:52:38
+% Last Modified by GUIDE v2.5 03-Oct-2016 21:28:26
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -58,14 +58,18 @@ handles.output = hObject;
 
 % Update handles structure
 global index;
+global BoundingBox;
+global BoundingBox_index;
+global JSONdata;
+BoundingBox = [];
+BoundingBox_index = 0;
+addpath('D:\SMILE_LAB\jsonlab')
 set(handles.axes1,'xtick',[],'ytick',[]);
 set(handles.axes1, 'units', 'normalized', 'position', [0.05 0.15 0.9 0.8]);
-path = getappdata(0,'path');
-
-images = getAllFiles(path);
-handles.images = images;
+handles.NextFlag = 0;
 index = 1;
-imshow(imread(images{index}),'Parent',handles.axes1);
+
+
 guidata(hObject, handles);
 % UIWAIT makes AnnotationToolBoundingBox wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
@@ -114,15 +118,13 @@ function back_Callback(hObject, eventdata, handles)
        'Ok','Cancel','Cancel');
    switch button
        case 'Ok'
-           sprintf('dddd')
+           %sprintf('dddd')
            closereq;
            AnnotationTool;
        
    end
    
    
-
-
 function Close_Callback(hObject, eventdata, handles)
 % hObject    handle to Close (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -137,13 +139,38 @@ function Undo_Callback(hObject, eventdata, handles)
 
 
 % --- Executes on button press in Clear.
+global BoundingBox;
+global BoundingBox_index;
+global index;
+if BoundingBox_index <1
+    msgbox('Can not undo')
+else
+    BoundingBox_index
+    BoundingBox(BoundingBox_index,:)=[];
+    sprintf('ddd')
+    BoundingBox_index
+    BoundingBox_index=BoundingBox_index-1
+    imshow(handles.images{index},'Parent',handles.axes1);
+    
+  
+end
+canvasDraw();
+
+
+    
+
 function Clear_Callback(hObject, eventdata, handles)
 % hObject    handle to Clear (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+global BoundingBox;
+global index;
+global BoundingBox_index;
+BoundingBox = [];
+BoundingBox_index = 0;
+imshow(handles.images{index},'Parent',handles.axes1);
+canvasDraw();
 
-
-% --- Executes on button press in Preview.
 function Preview_Callback(hObject, eventdata, handles)
 % hObject    handle to Preview (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -172,12 +199,38 @@ function Next_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
     global index; 
-    %get(handles.current_index)
+    global BoundingBox_index;
+    global BoundingBox;
+    handles.NextFlag = 1;
     index = index + 1;
-    imshow(handles.images{index},'Parent',handles.axes1);
+    %index = displayImage(handles,index);
+    try
+        imshow(handles.images{index},'Parent',handles.axes1);
+       BoundingBox_index = 0;
+       BoundingBox = [];
+    catch
+        Next_Callback(hObject,eventdata,handles); 
+    end
     
-   
-     
+    
+    
+    
+function index = displayImages(handles,index)
+    try
+        imshow(handles.images{index},'Parent',handles.axes1);
+        
+        
+    catch
+        sprintf('Not a valid imaged file')
+        index = index + 1;
+        displayImages(handles,index);
+        
+    end
+    
+        
+        
+    
+        
 
 
 % --- Executes on button press in previous.
@@ -191,6 +244,97 @@ if index <=1
 else
     %get(handles.current_index)
     index = index - 1;
-    
+        
     imshow(handles.images{index},'Parent',handles.axes1);
+    
 end
+
+
+% --------------------------------------------------------------------
+function uipushtool1_ClickedCallback(hObject, eventdata, handles)
+% hObject    handle to uipushtool1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global index;
+global JSONdata;
+dname = uigetdir();
+handles.images = getAllFiles(dname);
+JSONdata = fopen(fullfile(dname,'data.json'),'a');
+
+JSONdata
+guidata(hObject, handles);
+index = displayImages(handles,index);
+
+% try
+%     imshow(imread(handles.images{index}),'Parent',handles.axes1);
+% catch
+%     sprintf('Not a valid image')
+%     index = index + 1;
+%     
+% end
+
+
+% --------------------------------------------------------------------
+function AnnotationType_Callback(hObject, eventdata, handles)
+% hObject    handle to AnnotationType (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --------------------------------------------------------------------
+function Bounding_Box_Callback(hObject, eventdata, handles)
+% hObject    handle to Bounding_Box (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.annotationType = 'BoundingBox';
+guidata(hObject, handles);
+if get(handles.Mask,'Checked')
+    set(handles.Mask,'Checked','off');
+end
+set(handles.Bounding_Box,'Checked','on');
+drawBoundingBox(handles)
+% --------------------------------------------------------------------
+function Mask_Callback(hObject, eventdata, handles)
+% hObject    handle to Mask (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.annotationType = 'Mask';
+guidata(hObject, handles);
+
+if get(handles.Bounding_Box,'Checked')
+    set(handles.Bounding_Box,'Checked','off');
+end
+set(handles.Mask,'Checked','on');
+
+function canvasDraw()
+    global BoundingBox;
+    
+    shape = size(BoundingBox);
+    for r =1:shape(1) 
+      
+        rectangle('Position',BoundingBox(r,:),'linewidth',3);
+        
+    end
+    
+function drawBoundingBox(handles)
+global BoundingBox;
+global BoundingBox_index;
+global index;
+
+
+try
+    while (handles.NextFlag~=1)
+        rect = getrect(handles.axes1);
+        BoundingBox_index = BoundingBox_index + 1;
+        BoundingBox = [BoundingBox;rect]
+        size(BoundingBox)
+        rectangle('Position',rect,'linewidth',3);
+
+       
+    end
+catch 
+    drawBoundingBox(handles)
+    
+end
+
+ 
